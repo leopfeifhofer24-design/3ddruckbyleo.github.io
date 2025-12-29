@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAN Chat</title>
+</head>
+<body>
+<h2>LAN Chat</h2>
+<div id="chat" style="height:300px; overflow:auto; border:1px solid black;"></div>
+<input id="msg" placeholder="Nachricht" autocomplete="off">
+<button onclick="sendMsg()">Senden</button>
+
+<script>
+let chat = document.getElementById("chat");
+
+// Server-IP, Benutzername, Passwort, Login/Register abfragen
+let serverIP = prompt("Server-IP im LAN (z.B. 192.168.1.10):");
+let username = prompt("Benutzername:");
+let password = prompt("Passwort:");
+let action = prompt("login oder register?");
+
+// WebSocket verbinden
+let ws = new WebSocket(`ws://${serverIP}:7000`);
+
+ws.onopen = () => {
+    ws.send(JSON.stringify({action: action, username: username, password: password}));
+};
+
+// Nachrichten empfangen
+ws.onmessage = (event) => {
+    let data = JSON.parse(event.data);
+    if(data.type === "system" || data.type === "error"){
+        chat.innerHTML += "<b>" + data.message + "</b><br>";
+    } else if(data.type === "message"){
+        chat.innerHTML += data.user + ": " + data.message + "<br>";
+        chat.scrollTop = chat.scrollHeight;
+    }
+};
+
+// Nachricht senden
+function sendMsg(){
+    let msg = document.getElementById("msg").value;
+    if(msg){
+        ws.send(msg);
+        document.getElementById("msg").value = "";
+    }
+}
+</script>
+</body>
+</html>
